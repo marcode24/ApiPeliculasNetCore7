@@ -120,5 +120,23 @@ namespace ApiPeliculas.Controllers
             }
             return Ok(listaPeliculasDto);
         }
+
+        [HttpGet("Buscar")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public IActionResult Buscar(string nombre)
+        {
+            try
+            {
+                var resultado = _peliculaRepositorio.BuscarPelicula(nombre.Trim());
+                if (resultado.Any()) return Ok(resultado);
+                return NotFound();
+            } catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Error recuperando datos de la aplicacion");
+            }
+        }
     }
 }
