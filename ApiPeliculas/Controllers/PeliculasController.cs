@@ -1,4 +1,5 @@
-﻿using ApiPeliculas.Modelos.DTOs;
+﻿using ApiPeliculas.Modelos;
+using ApiPeliculas.Modelos.DTOs;
 using ApiPeliculas.Repositorio;
 using ApiPeliculas.Repositorio.IRepositorio;
 using AutoMapper;
@@ -46,6 +47,44 @@ namespace ApiPeliculas.Controllers
             var itemPeliculaDTO = _mapper.Map<PeliculaDTO>(itemPelicula);
 
             return Ok(itemPeliculaDTO);
+        }
+
+        [HttpPost]
+        [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(PeliculaDTO))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult CrearPelicula([FromBody] PeliculaDTO crearPeliculaDTO)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (crearPeliculaDTO == null) return BadRequest(ModelState);
+            if (_peliculaRepositorio.ExistePelicula(crearPeliculaDTO.Nombre))
+            {
+                ModelState.AddModelError("", "La pelicula ya existe");
+                return StatusCode(404, ModelState);
+            }
+            var pelicula = _mapper.Map<Pelicula>(crearPeliculaDTO);
+            if (!_peliculaRepositorio.CrearPelicula(pelicula))
+            {
+                ModelState.AddModelError("", $"Algo salio mal guardando el registro {pelicula.Nombre}");
+                return StatusCode(500, ModelState);
+            }
+            return CreatedAtRoute("GetPelicula", new { peliculaId = pelicula.Id }, pelicula);
+        }
+
+        [HttpPatch("{peliculaId:int}", Name = "ActualizarPelicula")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult ActualizarPelicula(int peliculaId, [FromBody] PeliculaDTO peliculaDTO)
+        {
+            if (peliculaDTO == null || peliculaId != peliculaDTO.Id) return BadRequest(ModelState);
+            var pelicula = _mapper.Map<Pelicula>(peliculaDTO);
+            if (!_peliculaRepositorio.ActualizarPelicula(pelicula))
+            {
+                ModelState.AddModelError("", $"Algo salio mal actualizando el registro {pelicula.Nombre}");
+                return StatusCode(500, ModelState);
+            }
+            return NoContent();
         }
     }
 }
